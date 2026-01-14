@@ -286,15 +286,47 @@ button {
     text-align: right;
 }
 
-/* ROI List */
+/* ROI List with editable names */
 .roi-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 8px 10px;
     margin-bottom: 5px;
     background: #2a2a4a;
     border-radius: 4px;
     border-left: 3px solid #3498db;
+}
+
+.roi-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.roi-name-input {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: #fff;
+    padding: 4px 6px;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    width: 100%;
+}
+
+.roi-name-input:hover {
+    border-color: #444;
+}
+
+.roi-name-input:focus {
+    border-color: #00ff88;
+    outline: none;
+    background: #1a1a2e;
+}
+
+.roi-name-input::placeholder {
+    color: #666;
 }
 
 .roi-label {
@@ -305,6 +337,183 @@ button {
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
     color: #888;
+}
+
+.btn-delete-roi {
+    background: transparent;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.6;
+}
+
+.btn-delete-roi:hover {
+    opacity: 1;
+}
+
+/* Collapsible Sections */
+.collapsible .collapsible-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+}
+
+.collapsible .collapsible-header:hover {
+    color: #00ff88;
+}
+
+.toggle-icon {
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.collapsible-content {
+    display: none;
+    padding-top: 12px;
+}
+
+.collapsible-content.expanded {
+    display: block;
+}
+
+/* Settings Groups */
+.settings-group {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.settings-group:last-child {
+    border-bottom: none;
+    margin-bottom: 10px;
+}
+
+.settings-group h4 {
+    font-size: 0.85rem;
+    color: #00ff88;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 100px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.form-row .form-group label {
+    margin-bottom: 4px;
+}
+
+.form-row .form-group input {
+    width: 100%;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #666;
+    display: block;
+    margin-top: 2px;
+}
+
+/* InfluxDB and OCR Settings Form Groups */
+.collapsible-content .form-group {
+    margin-bottom: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.collapsible-content .form-group label {
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+
+.collapsible-content .form-group input[type="text"],
+.collapsible-content .form-group input[type="password"],
+.collapsible-content .form-group input[type="number"] {
+    width: 100%;
+}
+
+/* OCR Debug Panel */
+.debug-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.debug-roi {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #2a2a4a;
+    border-radius: 4px;
+    border-left: 3px solid #3498db;
+}
+
+.debug-roi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.debug-roi-name {
+    font-weight: 600;
+    color: #00ff88;
+}
+
+.debug-roi-result {
+    font-family: 'Courier New', monospace;
+}
+
+.debug-roi-result.valid {
+    color: #00ff88;
+}
+
+.debug-roi-result.invalid {
+    color: #ff6b6b;
+}
+
+.debug-images {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.debug-image-item {
+    text-align: center;
+}
+
+.debug-image-item img {
+    max-width: 100%;
+    border: 1px solid #444;
+    border-radius: 2px;
+}
+
+.debug-image-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+.debug-raw-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #aaa;
+    background: #1a1a2e;
+    padding: 5px 8px;
+    border-radius: 3px;
 }
 
 /* Toast Notifications */

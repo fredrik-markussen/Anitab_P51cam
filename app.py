@@ -47,9 +47,14 @@ def init_services():
     # Initialize camera service
     camera_service = CameraService(config['stream_url'])
 
-    # Initialize OCR service
+    # Initialize OCR service with settings
     temp_range = config.get('temperature_range', {'min': 5, 'max': 37})
-    ocr_service = OCRService(temp_range['min'], temp_range['max'])
+    ocr_settings = config.get('ocr_settings', {})
+    ocr_service = OCRService(
+        temp_min=temp_range['min'],
+        temp_max=temp_range['max'],
+        ocr_settings=ocr_settings
+    )
 
     # Initialize InfluxDB service
     influx_config = config['influxdb']
@@ -58,7 +63,8 @@ def init_services():
         port=influx_config['port'],
         database=influx_config['database'],
         username=influx_config.get('username'),
-        password=influx_config.get('password')
+        password=influx_config.get('password'),
+        measurement=influx_config.get('measurement', 'anipills')
     )
 
 
@@ -250,6 +256,146 @@ def capture_now():
         'readings': readings,
         'timestamp': last_reading_time
     })
+
+
+@app.route('/api/capture/debug', methods=['POST'])
+def capture_debug():
+    """Perform OCR capture with debug output including processed images."""
+    global last_readings, last_reading_time
+
+    frame = camera_service.get_frame()
+    if frame is None:
+        return jsonify({'error': 'No frame available'}), 500
+
+    readings = ocr_service.extract_all_temperatures_debug(frame, config['rois'])
+
+    # Update last readings (without debug images for status polling)
+    last_readings = [{k: v for k, v in r.items() if k != 'debug_images'} for r in readings]
+    last_reading_time = time.strftime('%Y-%m-%d %H:%M:%S')
+
+    return jsonify({
+        'success': True,
+        'readings': readings,
+        'timestamp': last_reading_time
+    })
+
+
+# InfluxDB Configuration API
+@app.route('/api/influxdb', methods=['GET'])
+def get_influxdb_config():
+    """Get InfluxDB configuration (excluding password)."""
+    influx_config = config.get('influxdb', {})
+    return jsonify({
+        'host': influx_config.get('host', ''),
+        'port': influx_config.get('port', 8086),
+        'database': influx_config.get('database', ''),
+        'measurement': influx_config.get('measurement', 'anipills'),
+        'username': influx_config.get('username', '')
+    })
+
+
+@app.route('/api/influxdb', methods=['POST'])
+def update_influxdb_config():
+    """Update InfluxDB configuration."""
+    global config, influx_service
+    updates = request.json
+
+    if 'influxdb' not in config:
+        config['influxdb'] = {}
+
+    # Update allowed fields
+    for field in ['host', 'port', 'database', 'measurement', 'username']:
+        if field in updates:
+            config['influxdb'][field] = updates[field]
+
+    # Only update password if explicitly provided (not empty)
+    if updates.get('password'):
+        config['influxdb']['password'] = updates['password']
+
+    save_config()
+
+    # Reconfigure service
+    influx_service.reconfigure(
+        host=config['influxdb'].get('host'),
+        port=config['influxdb'].get('port'),
+        database=config['influxdb'].get('database'),
+        measurement=config['influxdb'].get('measurement', 'anipills'),
+        username=config['influxdb'].get('username'),
+        password=config['influxdb'].get('password')
+    )
+
+    return jsonify({'success': True, 'connected': influx_service.is_connected()})
+
+
+@app.route('/api/influxdb/test', methods=['POST'])
+def test_influxdb_connection():
+    """Test InfluxDB connection with provided settings."""
+    test_config = request.json or config.get('influxdb', {})
+
+    test_service = InfluxService(
+        host=test_config.get('host'),
+        port=test_config.get('port', 8086),
+        database=test_config.get('database'),
+        measurement=test_config.get('measurement', 'anipills'),
+        username=test_config.get('username'),
+        password=test_config.get('password')
+    )
+
+    try:
+        test_service.connect()
+        connected = test_service.is_connected()
+        test_service.disconnect()
+        return jsonify({
+            'success': connected,
+            'message': 'Connection successful' if connected else 'Connection failed'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# OCR Settings API
+@app.route('/api/ocr-settings', methods=['GET'])
+def get_ocr_settings():
+    """Get current OCR settings."""
+    return jsonify({
+        'temperature_range': config.get('temperature_range', {'min': 5, 'max': 37}),
+        'ocr_settings': config.get('ocr_settings', {
+            'clip_limit': 2.0,
+            'tile_grid_size': 8,
+            'block_size': 11,
+            'c_constant': 2
+        })
+    })
+
+
+@app.route('/api/ocr-settings', methods=['POST'])
+def update_ocr_settings():
+    """Update OCR settings."""
+    global config, ocr_service
+    updates = request.json
+
+    if 'temperature_range' in updates:
+        config['temperature_range'] = updates['temperature_range']
+
+    if 'ocr_settings' in updates:
+        if 'ocr_settings' not in config:
+            config['ocr_settings'] = {}
+        config['ocr_settings'].update(updates['ocr_settings'])
+
+        # Validate block_size is odd
+        if config['ocr_settings'].get('block_size', 11) % 2 == 0:
+            config['ocr_settings']['block_size'] += 1
+
+    save_config()
+
+    # Update OCR service
+    ocr_service.update_settings(
+        temp_min=config.get('temperature_range', {}).get('min'),
+        temp_max=config.get('temperature_range', {}).get('max'),
+        ocr_settings=config.get('ocr_settings')
+    )
+
+    return jsonify({'success': True})
 
 
 def main():

@@ -5,12 +5,13 @@ from influxdb import InfluxDBClient
 class InfluxService:
     """Service for writing temperature data to InfluxDB."""
 
-    def __init__(self, host, port, database, username=None, password=None):
+    def __init__(self, host, port, database, username=None, password=None, measurement="anipills"):
         self.host = host
         self.port = port
         self.database = database
         self.username = username
         self.password = password
+        self.measurement = measurement
         self.client = None
 
     def connect(self):
@@ -29,6 +30,23 @@ class InfluxService:
             self.client.close()
             self.client = None
 
+    def reconfigure(self, host=None, port=None, database=None, measurement=None, username=None, password=None):
+        """Update configuration and reconnect."""
+        if host is not None:
+            self.host = host
+        if port is not None:
+            self.port = port
+        if database is not None:
+            self.database = database
+        if measurement is not None:
+            self.measurement = measurement
+        if username is not None:
+            self.username = username
+        if password is not None:
+            self.password = password
+        self.disconnect()
+        self.connect()
+
     def is_connected(self):
         """Check if connected to InfluxDB."""
         if self.client is None:
@@ -39,16 +57,20 @@ class InfluxService:
         except Exception:
             return False
 
-    def write_temperature(self, sensor_id, temperature):
+    def write_temperature(self, sensor_id, temperature, sensor_name=None):
         """Write a single temperature reading to InfluxDB."""
         if not self.client:
             self.connect()
 
+        tags = {
+            "sensor_id": f"sensor_{sensor_id}"
+        }
+        if sensor_name:
+            tags["sensor_name"] = sensor_name
+
         point = {
-            "measurement": "anipills",
-            "tags": {
-                "sensor_id": f"sensor_{sensor_id}"
-            },
+            "measurement": self.measurement,
+            "tags": tags,
             "fields": {
                 "temperature": float(temperature)
             },
@@ -61,7 +83,7 @@ class InfluxService:
         """Write multiple temperature readings to InfluxDB.
 
         Args:
-            readings: List of dicts with 'sensor_id' and 'temperature' keys
+            readings: List of dicts with 'sensor_id', 'temperature', and optional 'sensor_name' keys
         """
         if not readings:
             return False
@@ -74,11 +96,15 @@ class InfluxService:
         points = []
         for reading in readings:
             if reading.get('valid', True) and reading.get('temperature') is not None:
+                tags = {
+                    "sensor_id": f"sensor_{reading['sensor_id']}"
+                }
+                if reading.get('sensor_name'):
+                    tags["sensor_name"] = reading['sensor_name']
+
                 points.append({
-                    "measurement": "anipills",
-                    "tags": {
-                        "sensor_id": f"sensor_{reading['sensor_id']}"
-                    },
+                    "measurement": self.measurement,
+                    "tags": tags,
                     "fields": {
                         "temperature": float(reading['temperature'])
                     },
@@ -94,6 +120,6 @@ class InfluxService:
         if not self.client:
             self.connect()
 
-        query = f'SELECT * FROM anipills ORDER BY time DESC LIMIT {limit}'
+        query = f'SELECT * FROM "{self.measurement}" ORDER BY time DESC LIMIT {limit}'
         result = self.client.query(query)
         return list(result.get_points())

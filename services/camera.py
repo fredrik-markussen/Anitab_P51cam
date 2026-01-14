@@ -81,8 +81,11 @@ class CameraService:
         for roi in rois:
             x, y, w, h = roi['x'], roi['y'], roi['width'], roi['height']
             cv2.rectangle(frame_with_rois, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            # Add label
-            label = f"S{roi['id']}"
+            # Use custom name if available, otherwise default to S{id}
+            label = roi.get('name', f"S{roi['id']}")
+            # Truncate long names for display
+            if len(label) > 12:
+                label = label[:9] + "..."
             cv2.putText(frame_with_rois, label, (x, y - 5),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         return frame_with_rois

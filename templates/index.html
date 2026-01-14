@@ -47,6 +47,7 @@
                     </div>
                     <div class="control-group">
                         <button id="btn-capture" class="btn-secondary">Capture Now</button>
+                        <button id="btn-capture-debug" class="btn-secondary">Capture with Debug</button>
                     </div>
                 </div>
 
@@ -59,12 +60,105 @@
                     </div>
                 </div>
 
+                <div class="panel-section collapsible">
+                    <h3 class="collapsible-header" data-target="influxdb-settings">InfluxDB Settings <span class="toggle-icon">+</span></h3>
+                    <div id="influxdb-settings" class="collapsible-content">
+                        <div class="form-group">
+                            <label for="influx-host">Host/IP:</label>
+                            <input type="text" id="influx-host" placeholder="192.168.1.100">
+                        </div>
+                        <div class="form-group">
+                            <label for="influx-port">Port:</label>
+                            <input type="number" id="influx-port" value="8086">
+                        </div>
+                        <div class="form-group">
+                            <label for="influx-database">Database:</label>
+                            <input type="text" id="influx-database" placeholder="temperature_db">
+                        </div>
+                        <div class="form-group">
+                            <label for="influx-measurement">Measurement:</label>
+                            <input type="text" id="influx-measurement" placeholder="anipills">
+                        </div>
+                        <div class="form-group">
+                            <label for="influx-username">Username:</label>
+                            <input type="text" id="influx-username" placeholder="(optional)">
+                        </div>
+                        <div class="form-group">
+                            <label for="influx-password">Password:</label>
+                            <input type="password" id="influx-password" placeholder="(leave blank to keep)">
+                        </div>
+                        <div class="control-group">
+                            <button id="btn-test-influx" class="btn-secondary">Test Connection</button>
+                            <button id="btn-save-influx" class="btn-primary">Save Settings</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section collapsible">
+                    <h3 class="collapsible-header" data-target="ocr-settings">OCR Settings <span class="toggle-icon">+</span></h3>
+                    <div id="ocr-settings" class="collapsible-content">
+                        <div class="settings-group">
+                            <h4>Temperature Range</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="temp-min">Min (C):</label>
+                                    <input type="number" id="temp-min" min="-50" max="100" step="0.1" value="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="temp-max">Max (C):</label>
+                                    <input type="number" id="temp-max" min="-50" max="100" step="0.1" value="37">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>CLAHE Enhancement</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="clip-limit">Clip Limit:</label>
+                                    <input type="number" id="clip-limit" min="0.1" max="10" step="0.1" value="2.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="tile-grid">Tile Grid:</label>
+                                    <input type="number" id="tile-grid" min="1" max="32" value="8">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>Adaptive Threshold</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="block-size">Block Size:</label>
+                                    <input type="number" id="block-size" min="3" max="99" step="2" value="11">
+                                    <span class="help-text">(odd number)</span>
+                                </div>
+                                <div class="form-group">
+                                    <label for="c-constant">C Constant:</label>
+                                    <input type="number" id="c-constant" min="-20" max="20" value="2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <button id="btn-save-ocr" class="btn-primary">Save OCR Settings</button>
+                            <button id="btn-reset-ocr" class="btn-secondary">Reset Defaults</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="panel-section">
                     <h3>Current Readings</h3>
                     <div id="readings-container">
                         <p class="no-data">No readings yet</p>
                     </div>
                     <p id="last-reading-time" class="timestamp"></p>
+                </div>
+
+                <div class="panel-section collapsible">
+                    <h3 class="collapsible-header" data-target="debug-section">OCR Debug Output <span class="toggle-icon">+</span></h3>
+                    <div id="debug-section" class="collapsible-content">
+                        <div id="debug-container" class="debug-container">
+                            <p class="no-data">Click "Capture with Debug" to see OCR processing stages</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel-section">
