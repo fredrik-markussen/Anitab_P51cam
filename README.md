@@ -21,10 +21,19 @@ Automated temperature monitoring system for Anipill devices. Captures video from
 
 ```bash
 # Install Tesseract OCR
-# Ubuntu/Debian:
 sudo apt install tesseract-ocr
 
-# Install Python dependencies
+# Install venv package
+sudo apt install python3.12-venv
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Navigate to project directory and install dependencies
+cd /path/to/Anitab_P51cam
 pip install -r requirements.txt
 ```
 
