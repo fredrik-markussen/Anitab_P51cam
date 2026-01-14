@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anitab P51cam - Temperature Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Anitab P51cam Temperature Monitor</h1>
+            <div class="status-bar">
+                <span id="camera-status" class="status-indicator">Camera: --</span>
+                <span id="influx-status" class="status-indicator">InfluxDB: --</span>
+                <span id="processing-status" class="status-indicator">Processing: --</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="video-panel">
+                <div class="panel-header">
+                    <h2>Live Feed</h2>
+                    <div class="view-toggle">
+                        <button id="btn-edit-mode" class="active">Edit ROIs</button>
+                        <button id="btn-view-mode">View Only</button>
+                    </div>
+                </div>
+                <div class="video-container">
+                    <img id="video-feed" src="/stream" alt="Camera Feed" style="display: none;">
+                    <canvas id="roi-canvas"></canvas>
+                </div>
+                <div class="roi-controls">
+                    <button id="btn-add-roi">Add ROI</button>
+                    <button id="btn-save-rois">Save ROIs</button>
+                    <button id="btn-reset-rois">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="panel-section">
+                    <h3>Processing Controls</h3>
+                    <div class="control-group">
+                        <button id="btn-start" class="btn-primary">Start Processing</button>
+                        <button id="btn-stop" class="btn-danger">Stop Processing</button>
+                    </div>
+                    <div class="control-group">
+                        <button id="btn-capture" class="btn-secondary">Capture Now</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Settings</h3>
+                    <div class="form-group">
+                        <label for="interval">Processing Interval (minutes):</label>
+                        <input type="number" id="interval" min="1" max="60" value="15">
+                        <button id="btn-save-interval">Save</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Current Readings</h3>
+                    <div id="readings-container">
+                        <p class="no-data">No readings yet</p>
+                    </div>
+                    <p id="last-reading-time" class="timestamp"></p>
+                </div>
+
+                <div class="panel-section">
+                    <h3>ROI List</h3>
+                    <div id="roi-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/roi-editor.js"></script>
+</body>
+</html>

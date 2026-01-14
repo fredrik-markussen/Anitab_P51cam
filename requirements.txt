@@ -1,0 +1,5 @@
+flask>=2.0
+opencv-python>=4.5
+pytesseract>=0.3
+influxdb>=5.3
+numpy>=1.20

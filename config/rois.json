@@ -1,0 +1,22 @@
+{
+  "stream_url": "http://10.239.99.61:5000/stream",
+  "processing_interval_minutes": 15,
+  "temperature_range": {"min": 5, "max": 37},
+  "rois": [
+    {"id": 1, "x": 140, "y": 29, "width": 95, "height": 41},
+    {"id": 2, "x": 140, "y": 93, "width": 95, "height": 41},
+    {"id": 3, "x": 140, "y": 157, "width": 93, "height": 41},
+    {"id": 4, "x": 140, "y": 223, "width": 92, "height": 41},
+    {"id": 5, "x": 345, "y": 29, "width": 95, "height": 41},
+    {"id": 6, "x": 345, "y": 93, "width": 95, "height": 41},
+    {"id": 7, "x": 345, "y": 157, "width": 95, "height": 41},
+    {"id": 8, "x": 345, "y": 221, "width": 95, "height": 41}
+  ],
+  "influxdb": {
+    "host": "10.239.99.73",
+    "port": 8086,
+    "database": "Anipill_data",
+    "username": "admin",
+    "password": "hamsterpi"
+  }
+}
