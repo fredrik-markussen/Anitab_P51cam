@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anitab P51cam - Temperature Monitor</title>
+    <title>ANITAB P51CAM - Temperature Monitor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Anitab P51cam Temperature Monitor</h1>
+            <h1>ANITAB P51CAM</h1>
             <div class="status-bar">
                 <span id="camera-status" class="status-indicator">Camera: --</span>
                 <span id="influx-status" class="status-indicator">InfluxDB: --</span>
@@ -53,12 +53,12 @@
                 <div class="panel-section">
                     <h3>Processing Controls</h3>
                     <div class="control-group">
-                        <button id="btn-start" class="btn-primary">Start Processing</button>
-                        <button id="btn-stop" class="btn-danger">Stop Processing</button>
+                        <button id="btn-start" class="btn-primary">Start <span class="keyboard-hint">S</span></button>
+                        <button id="btn-stop" class="btn-danger">Stop <span class="keyboard-hint">X</span></button>
                     </div>
                     <div class="control-group">
-                        <button id="btn-capture" class="btn-secondary">Capture Now</button>
-                        <button id="btn-capture-debug" class="btn-secondary">Capture with Debug</button>
+                        <button id="btn-capture" class="btn-secondary">Capture Now <span class="keyboard-hint">C</span></button>
+                        <button id="btn-capture-debug" class="btn-secondary">Debug Capture</button>
                     </div>
                 </div>
 
@@ -190,6 +190,10 @@
 
                 <div class="panel-section">
                     <h3>Current Readings</h3>
+                    <div id="countdown-container" class="countdown-display" style="display: none;">
+                        <span class="countdown-label">Next Capture:</span>
+                        <span id="countdown-value" class="countdown-value">--:--</span>
+                    </div>
                     <div id="readings-container">
                         <p class="no-data">No readings yet</p>
                     </div>

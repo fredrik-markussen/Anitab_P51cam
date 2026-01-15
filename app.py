@@ -39,13 +39,21 @@ def save_config():
 
 
 def init_services():
-    """Initialize all services with current config."""
+    """Initialize all services with current config.
+
+    Per FSD 6.1 Startup Sequence:
+    1. Load configuration
+    2. Initialize camera service
+    3. Initialize OCR service
+    4. Initialize InfluxDB service
+    """
     global camera_service, ocr_service, influx_service
 
     load_config()
 
-    # Initialize camera service
-    camera_service = CameraService(config['stream_url'])
+    # Initialize camera service (per FSD 9.2: reconnect_interval_seconds)
+    reconnect_interval = config.get('reconnect_interval_seconds', 30)
+    camera_service = CameraService(config['stream_url'], reconnect_interval_seconds=reconnect_interval)
 
     # Initialize OCR service with settings
     temp_range = config.get('temperature_range', {'min': 5, 'max': 37})
@@ -56,15 +64,17 @@ def init_services():
         ocr_settings=ocr_settings
     )
 
-    # Initialize InfluxDB service
+    # Initialize InfluxDB service (per FSD 7.1: camera_id tag)
     influx_config = config['influxdb']
+    camera_id = config.get('camera_id', 'cam_1')
     influx_service = InfluxService(
         host=influx_config['host'],
         port=influx_config['port'],
         database=influx_config['database'],
         username=influx_config.get('username'),
         password=influx_config.get('password'),
-        measurement=influx_config.get('measurement', 'anipills')
+        measurement=influx_config.get('measurement', 'temperature'),
+        camera_id=camera_id
     )
 
 

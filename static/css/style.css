@@ -31,7 +31,9 @@ header {
 
 header h1 {
     font-size: 1.5rem;
-    color: #00ff88;
+    color: #4ecca3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .status-bar {
@@ -49,7 +51,7 @@ header h1 {
 .status-indicator.connected,
 .status-indicator.running {
     background: #1b4332;
-    color: #40c057;
+    color: #4ecca3;
 }
 
 .status-indicator.disconnected,
@@ -100,9 +102,9 @@ header h1 {
 }
 
 .view-toggle button.active {
-    background: #00ff88;
+    background: #4ecca3;
     color: #1a1a2e;
-    border-color: #00ff88;
+    border-color: #4ecca3;
 }
 
 .video-container {
@@ -179,7 +181,7 @@ header h1 {
 }
 
 #refresh-rate-value {
-    color: #00ff88;
+    color: #4ecca3;
     font-family: 'Courier New', monospace;
     min-width: 40px;
     display: inline-block;
@@ -232,12 +234,12 @@ button {
 }
 
 .btn-primary {
-    background: #00ff88;
+    background: #4ecca3;
     color: #1a1a2e;
 }
 
 .btn-primary:hover {
-    background: #00cc6a;
+    background: #3db892;
 }
 
 .btn-danger {
@@ -264,7 +266,7 @@ button {
 }
 
 #btn-save-rois {
-    background: #00ff88;
+    background: #4ecca3;
     color: #1a1a2e;
 }
 
@@ -324,7 +326,7 @@ button {
 }
 
 .reading-item.valid {
-    border-left: 3px solid #00ff88;
+    border-left: 3px solid #4ecca3;
 }
 
 .reading-item.invalid {
@@ -340,7 +342,7 @@ button {
 .temperature {
     font-family: 'Courier New', monospace;
     font-size: 1.1rem;
-    color: #00ff88;
+    color: #4ecca3;
 }
 
 .reading-item.invalid .temperature {
@@ -400,7 +402,7 @@ button {
 }
 
 .roi-name-input:focus {
-    border-color: #00ff88;
+    border-color: #4ecca3;
     outline: none;
     background: #1a1a2e;
 }
@@ -443,7 +445,7 @@ button {
 }
 
 .collapsible .collapsible-header:hover {
-    color: #00ff88;
+    color: #4ecca3;
 }
 
 .toggle-icon {
@@ -475,7 +477,7 @@ button {
 
 .settings-group h4 {
     font-size: 0.85rem;
-    color: #00ff88;
+    color: #4ecca3;
     margin-bottom: 10px;
     font-weight: 500;
 }
@@ -563,7 +565,7 @@ button {
 
 .debug-roi-name {
     font-weight: 600;
-    color: #00ff88;
+    color: #4ecca3;
 }
 
 .debug-roi-result {
@@ -571,7 +573,7 @@ button {
 }
 
 .debug-roi-result.valid {
-    color: #00ff88;
+    color: #4ecca3;
 }
 
 .debug-roi-result.invalid {
@@ -631,12 +633,105 @@ button {
 
 .toast-success {
     background: #1b4332;
-    border: 1px solid #40c057;
+    border: 1px solid #4ecca3;
 }
 
 .toast-error {
     background: #3d1c1c;
     border: 1px solid #ff6b6b;
+}
+
+.toast-warning {
+    background: #3d3d1c;
+    border: 1px solid #ffc107;
+}
+
+/* Status indicator dots per FSD 4.3.2 */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-left: 8px;
+}
+
+.status-dot.valid {
+    background-color: #4ecca3;
+}
+
+.status-dot.invalid {
+    background-color: #ff6b6b;
+}
+
+.status-dot.no-reading {
+    background-color: #6c757d;
+    border: 1px solid #888;
+}
+
+/* Next capture countdown */
+.countdown-display {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #2a2a4a;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.countdown-label {
+    color: #a0a0a0;
+}
+
+.countdown-value {
+    font-family: 'Courier New', monospace;
+    color: #4ecca3;
+    font-weight: bold;
+}
+
+/* ROI Context Menu */
+.roi-context-menu {
+    position: fixed;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 4px;
+    padding: 4px 0;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    min-width: 140px;
+}
+
+.roi-context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #e8e8e8;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roi-context-menu-item:hover {
+    background: #0f3460;
+}
+
+.roi-context-menu-item.danger {
+    color: #ff6b6b;
+}
+
+.roi-context-menu-item.danger:hover {
+    background: #3d1c1c;
+}
+
+/* Keyboard shortcut hints */
+.keyboard-hint {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-left: 4px;
+    padding: 2px 4px;
+    background: #1a1a2e;
+    border-radius: 2px;
+    font-family: monospace;
 }
 
 /* Scrollbar */

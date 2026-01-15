@@ -12,6 +12,15 @@ class ROIEditor {
         this.videoHeight = 480;
         this.maxDisplayWidth = 960;
 
+        // Countdown timer state per FSD 4.3.2
+        this.lastCaptureTime = null;
+        this.intervalMinutes = 15;
+        this.countdownInterval = null;
+        this.processingRunning = false;
+
+        // Context menu element
+        this.contextMenu = null;
+
         this.init();
     }
 
@@ -23,8 +32,10 @@ class ROIEditor {
         this.loadOCRSettings();
         this.bindEvents();
         this.initCollapsibles();
+        this.initContextMenu();
         this.startStatusPolling();
         this.startVideoBackground();
+        this.startCountdownTimer();
     }
 
     initCanvas() {
@@ -137,6 +148,126 @@ class ROIEditor {
                 icon.textContent = content.classList.contains('expanded') ? '-' : '+';
             });
         });
+    }
+
+    // Context menu for ROIs per FSD 4.4.1
+    initContextMenu() {
+        // Create context menu element
+        this.contextMenu = document.createElement('div');
+        this.contextMenu.className = 'roi-context-menu';
+        this.contextMenu.style.display = 'none';
+        this.contextMenu.innerHTML = `
+            <div class="roi-context-menu-item" data-action="rename">Rename</div>
+            <div class="roi-context-menu-item" data-action="duplicate">Duplicate</div>
+            <div class="roi-context-menu-item danger" data-action="delete">Delete</div>
+        `;
+        document.body.appendChild(this.contextMenu);
+
+        // Handle context menu clicks
+        this.contextMenu.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            const roiId = parseInt(this.contextMenu.dataset.roiId);
+            this.hideContextMenu();
+
+            switch (action) {
+                case 'rename':
+                    this.promptRenameROI(roiId);
+                    break;
+                case 'duplicate':
+                    this.duplicateROI(roiId);
+                    break;
+                case 'delete':
+                    this.deleteROIById(roiId);
+                    break;
+            }
+        });
+
+        // Hide on click elsewhere
+        document.addEventListener('click', () => this.hideContextMenu());
+
+        // Right-click on canvas
+        this.canvas.on('mouse:down', (opt) => {
+            if (opt.e.button === 2 && opt.target && opt.target.isROI && !opt.target.isLabel) {
+                opt.e.preventDefault();
+                this.showContextMenu(opt.e.clientX, opt.e.clientY, opt.target.roiId);
+            }
+        });
+
+        // Prevent default context menu on canvas
+        document.querySelector('.canvas-container')?.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    }
+
+    showContextMenu(x, y, roiId) {
+        this.contextMenu.dataset.roiId = roiId;
+        this.contextMenu.style.left = `${x}px`;
+        this.contextMenu.style.top = `${y}px`;
+        this.contextMenu.style.display = 'block';
+    }
+
+    hideContextMenu() {
+        this.contextMenu.style.display = 'none';
+    }
+
+    promptRenameROI(roiId) {
+        const roi = this.rois.find(r => r.id === roiId);
+        if (!roi) return;
+
+        const currentName = roi.name || `Sensor ${roiId}`;
+        const newName = prompt('Enter new name for ROI:', currentName);
+        if (newName !== null) {
+            this.updateROIName(roiId, newName);
+        }
+    }
+
+    duplicateROI(roiId) {
+        const originalRoi = this.rois.find(r => r.id === roiId);
+        if (!originalRoi) return;
+
+        this.roiIdCounter++;
+        const newROI = {
+            id: this.roiIdCounter,
+            x: originalRoi.x + 20,
+            y: originalRoi.y + 20,
+            width: originalRoi.width,
+            height: originalRoi.height,
+            name: originalRoi.name ? `${originalRoi.name} (copy)` : undefined
+        };
+        this.rois.push(newROI);
+        this.addROIToCanvas(newROI);
+        this.updateROIList();
+        this.canvas.renderAll();
+        this.showMessage('ROI duplicated', 'success');
+    }
+
+    // Countdown timer per FSD 4.3.2
+    startCountdownTimer() {
+        const updateCountdown = () => {
+            const container = document.getElementById('countdown-container');
+            const valueEl = document.getElementById('countdown-value');
+
+            if (!this.processingRunning || !this.lastCaptureTime) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+
+            const now = new Date();
+            const lastCapture = new Date(this.lastCaptureTime);
+            const nextCapture = new Date(lastCapture.getTime() + this.intervalMinutes * 60 * 1000);
+            const remaining = Math.max(0, nextCapture - now);
+
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+
+            valueEl.textContent = `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+        };
+
+        // Update every second
+        this.countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
     }
 
     async loadROIs() {
@@ -384,12 +515,41 @@ class ROIEditor {
         document.getElementById('btn-reset-rois').addEventListener('click', () => this.resetROIs());
         document.getElementById('btn-reconnect-camera').addEventListener('click', () => this.reconnectCamera());
 
-        // Delete on keyboard
+        // Keyboard shortcuts per FSD 4.3.3
         document.addEventListener('keydown', (e) => {
+            // Ignore if typing in input field
+            if (document.activeElement.tagName === 'INPUT' ||
+                document.activeElement.tagName === 'TEXTAREA' ||
+                document.activeElement.tagName === 'SELECT') {
+                return;
+            }
+
+            // Delete/Backspace for ROI deletion
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                if (document.activeElement.tagName !== 'INPUT') {
-                    this.deleteSelectedROI();
-                }
+                this.deleteSelectedROI();
+                return;
+            }
+
+            // Keyboard shortcuts (case insensitive)
+            const key = e.key.toLowerCase();
+
+            switch (key) {
+                case 's': // Start processing
+                    e.preventDefault();
+                    this.startProcessing();
+                    break;
+                case 'x': // Stop processing
+                    e.preventDefault();
+                    this.stopProcessing();
+                    break;
+                case 'c': // Capture now
+                    e.preventDefault();
+                    this.captureNow();
+                    break;
+                case 'e': // Toggle ROI edit mode
+                    e.preventDefault();
+                    this.setEditMode(!this.editMode);
+                    break;
             }
         });
 
@@ -784,6 +944,13 @@ class ROIEditor {
         // Update interval field
         document.getElementById('interval').value = status.interval_minutes;
 
+        // Update countdown timer state
+        this.processingRunning = status.processing_running;
+        this.intervalMinutes = status.interval_minutes;
+        if (status.last_reading_time) {
+            this.lastCaptureTime = status.last_reading_time;
+        }
+
         // Update canvas size if video resolution changed
         if (status.video_resolution) {
             this.updateCanvasSize(status.video_resolution.width, status.video_resolution.height);
@@ -803,15 +970,24 @@ class ROIEditor {
             return;
         }
 
+        // Per FSD 4.3.2: Status Indicators - Green (valid), Gray (no reading), Red (out of range)
         container.innerHTML = readings.map(r => {
             const statusClass = r.valid ? 'valid' : 'invalid';
-            const temp = r.temperature !== null ? r.temperature.toFixed(2) : 'N/A';
+            const hasReading = r.temperature !== null;
+            const temp = hasReading ? `${r.temperature.toFixed(1)}°C` : '---.--';
             const displayName = r.sensor_name || `Sensor ${r.sensor_id}`;
+
+            // Determine status dot class per FSD
+            let dotClass = 'no-reading';
+            if (hasReading) {
+                dotClass = r.valid ? 'valid' : 'invalid';
+            }
+
             return `
                 <div class="reading-item ${statusClass}">
                     <span class="sensor-id">${displayName}</span>
-                    <span class="temperature">${temp} C</span>
-                    ${!r.valid ? `<span class="reason">${r.reason || ''}</span>` : ''}
+                    <span class="temperature">${temp}<span class="status-dot ${dotClass}"></span></span>
+                    ${!r.valid && r.reason ? `<span class="reason">${r.reason}</span>` : ''}
                 </div>
             `;
         }).join('');

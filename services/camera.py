@@ -6,8 +6,9 @@ import time
 class CameraService:
     """Service for capturing video frames from MJPEG stream."""
 
-    def __init__(self, stream_url):
+    def __init__(self, stream_url, reconnect_interval_seconds=30):
         self.stream_url = stream_url
+        self.reconnect_interval_seconds = reconnect_interval_seconds  # Per FSD 9.2
         self.cap = None
         self.frame = None
         self.lock = threading.Lock()
@@ -45,9 +46,9 @@ class CameraService:
                     with self.lock:
                         self.frame = frame
                 else:
-                    # Try to reconnect
+                    # Try to reconnect per FSD 6.3 error recovery
                     self.cap.release()
-                    time.sleep(1)
+                    time.sleep(self.reconnect_interval_seconds)
                     self.cap = cv2.VideoCapture(self.stream_url)
             else:
                 time.sleep(0.1)

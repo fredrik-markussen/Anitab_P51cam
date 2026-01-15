@@ -5,13 +5,14 @@ from influxdb import InfluxDBClient
 class InfluxService:
     """Service for writing temperature data to InfluxDB."""
 
-    def __init__(self, host, port, database, username=None, password=None, measurement="anipills"):
+    def __init__(self, host, port, database, username=None, password=None, measurement="anipills", camera_id="cam_1"):
         self.host = host
         self.port = port
         self.database = database
         self.username = username
         self.password = password
         self.measurement = measurement
+        self.camera_id = camera_id  # Per FSD 7.1
         self.client = None
 
     def connect(self):
@@ -30,7 +31,7 @@ class InfluxService:
             self.client.close()
             self.client = None
 
-    def reconfigure(self, host=None, port=None, database=None, measurement=None, username=None, password=None):
+    def reconfigure(self, host=None, port=None, database=None, measurement=None, username=None, password=None, camera_id=None):
         """Update configuration and reconnect."""
         if host is not None:
             self.host = host
@@ -44,6 +45,8 @@ class InfluxService:
             self.username = username
         if password is not None:
             self.password = password
+        if camera_id is not None:
+            self.camera_id = camera_id
         self.disconnect()
         self.connect()
 
@@ -62,8 +65,10 @@ class InfluxService:
         if not self.client:
             self.connect()
 
+        # Per FSD 7.1: Tags include sensor_id, sensor_name, camera_id
         tags = {
-            "sensor_id": f"sensor_{sensor_id}"
+            "sensor_id": f"sensor_{sensor_id}",
+            "camera_id": self.camera_id
         }
         if sensor_name:
             tags["sensor_name"] = sensor_name
@@ -72,7 +77,7 @@ class InfluxService:
             "measurement": self.measurement,
             "tags": tags,
             "fields": {
-                "temperature": float(temperature)
+                "value": float(temperature)  # Per FSD 7.1: field name is "value"
             },
             "time": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         }
@@ -84,6 +89,10 @@ class InfluxService:
 
         Args:
             readings: List of dicts with 'sensor_id', 'temperature', and optional 'sensor_name' keys
+
+        Per FSD 7.1 - InfluxDB Schema:
+            Tags: sensor_id, sensor_name, camera_id
+            Fields: value (float)
         """
         if not readings:
             return False
@@ -96,8 +105,10 @@ class InfluxService:
         points = []
         for reading in readings:
             if reading.get('valid', True) and reading.get('temperature') is not None:
+                # Per FSD 7.1: Tags include sensor_id, sensor_name, camera_id
                 tags = {
-                    "sensor_id": f"sensor_{reading['sensor_id']}"
+                    "sensor_id": f"sensor_{reading['sensor_id']}",
+                    "camera_id": self.camera_id
                 }
                 if reading.get('sensor_name'):
                     tags["sensor_name"] = reading['sensor_name']
@@ -106,7 +117,7 @@ class InfluxService:
                     "measurement": self.measurement,
                     "tags": tags,
                     "fields": {
-                        "temperature": float(reading['temperature'])
+                        "value": float(reading['temperature'])  # Per FSD 7.1: field is "value"
                     },
                     "time": timestamp
                 })
