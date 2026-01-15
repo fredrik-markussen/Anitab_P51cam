@@ -63,7 +63,7 @@ header h1 {
 /* Main Content Layout */
 .main-content {
     display: grid;
-    grid-template-columns: 1fr 350px;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
@@ -196,11 +196,16 @@ header h1 {
     margin-right: 10px;
 }
 
-/* Control Panel */
+/* Control Panel - Two column layout to minimize scrolling */
 .control-panel {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
+    align-content: start;
+}
+
+.control-panel .panel-section.full-width {
+    grid-column: 1 / -1;
 }
 
 .panel-section {
@@ -753,12 +758,14 @@ button {
 }
 
 /* Responsive */
-@media (max-width: 1000px) {
+@media (max-width: 1400px) {
     .main-content {
         grid-template-columns: 1fr;
     }
+}
 
+@media (max-width: 800px) {
     .control-panel {
-        order: -1;
+        grid-template-columns: 1fr;
     }
 }

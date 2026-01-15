@@ -50,6 +50,7 @@
             </div>
 
             <div class="control-panel">
+                <!-- Row 1: Processing Controls | Current Readings -->
                 <div class="panel-section">
                     <h3>Processing Controls</h3>
                     <div class="control-group">
@@ -60,17 +61,26 @@
                         <button id="btn-capture" class="btn-secondary">Capture Now <span class="keyboard-hint">C</span></button>
                         <button id="btn-capture-debug" class="btn-secondary">Debug Capture</button>
                     </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3>Settings</h3>
-                    <div class="form-group">
-                        <label for="interval">Processing Interval (minutes):</label>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="interval">Interval (min):</label>
                         <input type="number" id="interval" min="1" max="60" value="15">
                         <button id="btn-save-interval">Save</button>
                     </div>
                 </div>
 
+                <div class="panel-section">
+                    <h3>Current Readings</h3>
+                    <div id="countdown-container" class="countdown-display" style="display: none;">
+                        <span class="countdown-label">Next Capture:</span>
+                        <span id="countdown-value" class="countdown-value">--:--</span>
+                    </div>
+                    <div id="readings-container">
+                        <p class="no-data">No readings yet</p>
+                    </div>
+                    <p id="last-reading-time" class="timestamp"></p>
+                </div>
+
+                <!-- Row 2: InfluxDB Settings | OCR Settings -->
                 <div class="panel-section collapsible">
                     <h3 class="collapsible-header" data-target="influxdb-settings">InfluxDB Settings <span class="toggle-icon">+</span></h3>
                     <div id="influxdb-settings" class="collapsible-content">
@@ -134,7 +144,7 @@
                                 <div class="form-group">
                                     <label for="threshold-value">Threshold Value:</label>
                                     <input type="number" id="threshold-value" min="0" max="255" value="200">
-                                    <span class="help-text">(0-255, legacy used 200)</span>
+                                    <span class="help-text">(0-255)</span>
                                 </div>
                             </div>
                             <div id="adaptive-threshold-settings" style="display: none;">
@@ -142,7 +152,6 @@
                                     <div class="form-group">
                                         <label for="block-size">Block Size:</label>
                                         <input type="number" id="block-size" min="3" max="99" step="2" value="11">
-                                        <span class="help-text">(odd number)</span>
                                     </div>
                                     <div class="form-group">
                                         <label for="c-constant">C Constant:</label>
@@ -156,9 +165,8 @@
                             <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="use-clahe">
-                                    Enable CLAHE Enhancement
+                                    Enable CLAHE
                                 </label>
-                                <span class="help-text">(contrast enhancement, legacy did not use)</span>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
@@ -172,46 +180,35 @@
                             </div>
                         </div>
                         <div class="settings-group">
-                            <h4>Tesseract Settings</h4>
+                            <h4>Tesseract</h4>
                             <div class="form-group">
                                 <label for="psm-mode">PSM Mode:</label>
                                 <select id="psm-mode">
-                                    <option value="6">6 - Block of text (Legacy)</option>
+                                    <option value="6">6 - Block</option>
                                     <option value="7">7 - Single line</option>
                                 </select>
                             </div>
                         </div>
                         <div class="control-group">
-                            <button id="btn-save-ocr" class="btn-primary">Save OCR Settings</button>
-                            <button id="btn-reset-ocr" class="btn-secondary">Reset to Legacy</button>
+                            <button id="btn-save-ocr" class="btn-primary">Save OCR</button>
+                            <button id="btn-reset-ocr" class="btn-secondary">Reset</button>
                         </div>
                     </div>
                 </div>
 
+                <!-- Row 3: ROI List | Debug Output -->
                 <div class="panel-section">
-                    <h3>Current Readings</h3>
-                    <div id="countdown-container" class="countdown-display" style="display: none;">
-                        <span class="countdown-label">Next Capture:</span>
-                        <span id="countdown-value" class="countdown-value">--:--</span>
-                    </div>
-                    <div id="readings-container">
-                        <p class="no-data">No readings yet</p>
-                    </div>
-                    <p id="last-reading-time" class="timestamp"></p>
+                    <h3>ROI List</h3>
+                    <div id="roi-list"></div>
                 </div>
 
                 <div class="panel-section collapsible">
                     <h3 class="collapsible-header" data-target="debug-section">OCR Debug Output <span class="toggle-icon">+</span></h3>
                     <div id="debug-section" class="collapsible-content">
                         <div id="debug-container" class="debug-container">
-                            <p class="no-data">Click "Capture with Debug" to see OCR processing stages</p>
+                            <p class="no-data">Click "Debug Capture" to see OCR processing stages</p>
                         </div>
                     </div>
-                </div>
-
-                <div class="panel-section">
-                    <h3>ROI List</h3>
-                    <div id="roi-list"></div>
                 </div>
             </div>
         </div>
