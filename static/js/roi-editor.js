@@ -8,6 +8,9 @@ class ROIEditor {
         this.rois = [];
         this.editMode = true;
         this.roiIdCounter = 0;
+        this.videoWidth = 640;
+        this.videoHeight = 480;
+        this.maxDisplayWidth = 960;
 
         this.init();
     }
@@ -25,20 +28,69 @@ class ROIEditor {
     }
 
     initCanvas() {
-        const container = document.querySelector('.video-container');
         const canvasEl = document.getElementById('roi-canvas');
-
-        // Set canvas size to match video
-        canvasEl.width = 640;
-        canvasEl.height = 480;
+        canvasEl.width = this.videoWidth;
+        canvasEl.height = this.videoHeight;
 
         this.canvas = new fabric.Canvas('roi-canvas', {
             selection: true,
             preserveObjectStacking: true
         });
 
-        this.canvas.setWidth(640);
-        this.canvas.setHeight(480);
+        this.canvas.setWidth(this.videoWidth);
+        this.canvas.setHeight(this.videoHeight);
+    }
+
+    updateCanvasSize(width, height) {
+        if (width && height && (width !== this.videoWidth || height !== this.videoHeight)) {
+            console.log(`Updating canvas to native resolution: ${width}x${height}`);
+            this.videoWidth = width;
+            this.videoHeight = height;
+
+            // Set canvas to native resolution (internal coordinates)
+            this.canvas.setWidth(width);
+            this.canvas.setHeight(height);
+
+            // Apply CSS scaling if too large for display
+            const wrapper = document.querySelector('.canvas-container');
+            if (width > this.maxDisplayWidth) {
+                const scale = this.maxDisplayWidth / width;
+                wrapper.style.transform = `scale(${scale})`;
+                wrapper.style.transformOrigin = 'top left';
+                wrapper.style.width = `${width}px`;
+                wrapper.style.height = `${height}px`;
+                // Adjust container size for scaled content
+                const container = document.querySelector('.video-container');
+                container.style.width = `${Math.round(width * scale)}px`;
+                container.style.height = `${Math.round(height * scale)}px`;
+                this.updateResolutionDisplay(width, height, Math.round(scale * 100));
+            } else {
+                wrapper.style.transform = '';
+                wrapper.style.transformOrigin = '';
+                wrapper.style.width = '';
+                wrapper.style.height = '';
+                const container = document.querySelector('.video-container');
+                container.style.width = '';
+                container.style.height = '';
+                this.updateResolutionDisplay(width, height, 100);
+            }
+
+            this.renderROIs();
+        }
+    }
+
+    updateResolutionDisplay(width, height, scalePercent) {
+        let resDisplay = document.getElementById('resolution-display');
+        if (!resDisplay) {
+            resDisplay = document.createElement('span');
+            resDisplay.id = 'resolution-display';
+            resDisplay.className = 'resolution-display';
+            document.querySelector('.refresh-control').prepend(resDisplay);
+        }
+        resDisplay.textContent = `${width}x${height}`;
+        if (scalePercent < 100) {
+            resDisplay.textContent += ` (${scalePercent}%)`;
+        }
     }
 
     startVideoBackground() {
@@ -48,16 +100,30 @@ class ROIEditor {
                 // In edit mode, use static image as background
                 fabric.Image.fromURL('/stream', (img) => {
                     if (img) {
-                        img.scaleToWidth(this.canvas.width);
+                        // Scale image to fit canvas (native resolution)
+                        img.scaleToWidth(this.videoWidth);
                         this.canvas.setBackgroundImage(img, this.canvas.renderAll.bind(this.canvas));
                     }
                 }, { crossOrigin: 'anonymous' });
             }
         };
 
-        // Update background periodically
-        setInterval(updateBackground, 1000);
+        // Update background periodically based on slider value
+        let refreshInterval = setInterval(updateBackground, 1000);
         updateBackground();
+
+        // Handle refresh rate slider changes
+        const slider = document.getElementById('refresh-rate');
+        const valueDisplay = document.getElementById('refresh-rate-value');
+
+        slider.addEventListener('input', () => {
+            const rate = parseInt(slider.value);
+            valueDisplay.textContent = rate;
+
+            // Clear old interval and set new one
+            clearInterval(refreshInterval);
+            refreshInterval = setInterval(updateBackground, rate);
+        });
     }
 
     initCollapsibles() {
@@ -119,7 +185,7 @@ class ROIEditor {
         rect.roiId = roi.id;
         rect.roiName = roi.name || '';
 
-        // Add label - show name if available
+        // Add label
         const displayLabel = roi.name || `S${roi.id}`;
         const label = new fabric.Text(displayLabel, {
             left: roi.x,
@@ -134,25 +200,17 @@ class ROIEditor {
         label.isLabel = true;
         label.roiId = roi.id;
 
-        // Group rect and label
         rect.label = label;
 
         this.canvas.add(rect);
         this.canvas.add(label);
 
-        // Update label position when rect moves
         rect.on('moving', () => {
-            label.set({
-                left: rect.left,
-                top: rect.top - 18
-            });
+            label.set({ left: rect.left, top: rect.top - 18 });
         });
 
         rect.on('scaling', () => {
-            label.set({
-                left: rect.left * rect.scaleX,
-                top: rect.top * rect.scaleY - 18
-            });
+            label.set({ left: rect.left, top: rect.top - 18 });
         });
     }
 
@@ -162,8 +220,8 @@ class ROIEditor {
             id: this.roiIdCounter,
             x: 100,
             y: 100,
-            width: 95,
-            height: 41
+            width: 150,
+            height: 60
         };
         this.rois.push(newROI);
         this.addROIToCanvas(newROI);
@@ -183,7 +241,6 @@ class ROIEditor {
                 width: Math.round(rect.width * rect.scaleX),
                 height: Math.round(rect.height * rect.scaleY)
             };
-            // Include name if set
             if (rect.roiName) {
                 roi.name = rect.roiName;
             }
@@ -325,6 +382,7 @@ class ROIEditor {
         document.getElementById('btn-add-roi').addEventListener('click', () => this.addNewROI());
         document.getElementById('btn-save-rois').addEventListener('click', () => this.saveROIs());
         document.getElementById('btn-reset-rois').addEventListener('click', () => this.resetROIs());
+        document.getElementById('btn-reconnect-camera').addEventListener('click', () => this.reconnectCamera());
 
         // Delete on keyboard
         document.addEventListener('keydown', (e) => {
@@ -351,6 +409,9 @@ class ROIEditor {
         // OCR settings
         document.getElementById('btn-save-ocr').addEventListener('click', () => this.saveOCRSettings());
         document.getElementById('btn-reset-ocr').addEventListener('click', () => this.resetOCRDefaults());
+
+        // Threshold mode toggle
+        document.getElementById('threshold-mode').addEventListener('change', () => this.updateThresholdModeVisibility());
     }
 
     // InfluxDB Configuration Methods
@@ -435,12 +496,36 @@ class ROIEditor {
 
             // OCR settings
             const ocr = data.ocr_settings || {};
+
+            // New threshold mode settings
+            document.getElementById('threshold-mode').value = ocr.threshold_mode ?? 'simple';
+            document.getElementById('threshold-value').value = ocr.threshold_value ?? 200;
+            document.getElementById('use-clahe').checked = ocr.use_clahe ?? false;
+            document.getElementById('psm-mode').value = ocr.psm_mode ?? 6;
+
+            // Adaptive threshold settings (CLAHE)
             document.getElementById('clip-limit').value = ocr.clip_limit ?? 2.0;
             document.getElementById('tile-grid').value = ocr.tile_grid_size ?? 8;
             document.getElementById('block-size').value = ocr.block_size ?? 11;
             document.getElementById('c-constant').value = ocr.c_constant ?? 2;
+
+            // Update visibility based on threshold mode
+            this.updateThresholdModeVisibility();
         } catch (error) {
             console.error('Failed to load OCR settings:', error);
+        }
+    }
+
+    updateThresholdModeVisibility() {
+        const mode = document.getElementById('threshold-mode').value;
+        const simpleSettings = document.getElementById('simple-threshold-settings');
+        const adaptiveSettings = document.getElementById('adaptive-threshold-settings');
+
+        if (simpleSettings) {
+            simpleSettings.style.display = mode === 'simple' ? 'block' : 'none';
+        }
+        if (adaptiveSettings) {
+            adaptiveSettings.style.display = mode === 'adaptive' ? 'block' : 'none';
         }
     }
 
@@ -451,12 +536,20 @@ class ROIEditor {
                 max: parseFloat(document.getElementById('temp-max').value)
             },
             ocr_settings: {
+                // Threshold mode settings
+                threshold_mode: document.getElementById('threshold-mode').value,
+                threshold_value: parseInt(document.getElementById('threshold-value').value),
+                use_clahe: document.getElementById('use-clahe').checked,
+                psm_mode: parseInt(document.getElementById('psm-mode').value),
+                // CLAHE/Adaptive settings
                 clip_limit: parseFloat(document.getElementById('clip-limit').value),
                 tile_grid_size: parseInt(document.getElementById('tile-grid').value),
                 block_size: parseInt(document.getElementById('block-size').value),
                 c_constant: parseInt(document.getElementById('c-constant').value)
             }
         };
+
+        console.log('Saving OCR settings:', settings);
 
         try {
             const response = await fetch('/api/ocr-settings', {
@@ -465,23 +558,53 @@ class ROIEditor {
                 body: JSON.stringify(settings)
             });
 
-            if (response.ok) {
-                this.showMessage('OCR settings saved', 'success');
+            const data = await response.json();
+            console.log('Server response:', data);
+
+            if (response.ok && data.success) {
+                this.showMessage(`OCR settings saved (threshold=${data.applied_settings?.threshold_value}, mode=${data.applied_settings?.threshold_mode})`, 'success');
             } else {
                 this.showMessage('Failed to save OCR settings', 'error');
             }
         } catch (error) {
+            console.error('Save error:', error);
             this.showMessage('Failed to save OCR settings', 'error');
         }
     }
 
     resetOCRDefaults() {
+        // Legacy-style defaults (matching camera_check.py)
         document.getElementById('temp-min').value = 5;
         document.getElementById('temp-max').value = 37;
+        document.getElementById('threshold-mode').value = 'simple';
+        document.getElementById('threshold-value').value = 200;
+        document.getElementById('use-clahe').checked = false;
+        document.getElementById('psm-mode').value = 6;
         document.getElementById('clip-limit').value = 2.0;
         document.getElementById('tile-grid').value = 8;
         document.getElementById('block-size').value = 11;
         document.getElementById('c-constant').value = 2;
+        this.updateThresholdModeVisibility();
+    }
+
+    // Camera Methods
+    async reconnectCamera() {
+        this.showMessage('Reconnecting camera...', 'success');
+        try {
+            const response = await fetch('/api/camera/reconnect', { method: 'POST' });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                const res = data.resolution;
+                this.showMessage(`Camera reconnected (${res?.width}x${res?.height})`, 'success');
+                if (res) {
+                    this.updateCanvasSize(res.width, res.height);
+                }
+            } else {
+                this.showMessage(data.error || 'Reconnect failed', 'error');
+            }
+        } catch (error) {
+            this.showMessage('Reconnect failed', 'error');
+        }
     }
 
     // Processing Methods
@@ -652,8 +775,19 @@ class ROIEditor {
         processingEl.textContent = `Processing: ${status.processing_running ? 'Running' : 'Stopped'}`;
         processingEl.className = `status-indicator ${status.processing_running ? 'running' : 'stopped'}`;
 
+        // Show/hide offline overlay
+        const offlineOverlay = document.getElementById('offline-overlay');
+        if (offlineOverlay) {
+            offlineOverlay.style.display = status.camera_connected ? 'none' : 'flex';
+        }
+
         // Update interval field
         document.getElementById('interval').value = status.interval_minutes;
+
+        // Update canvas size if video resolution changed
+        if (status.video_resolution) {
+            this.updateCanvasSize(status.video_resolution.width, status.video_resolution.height);
+        }
 
         // Update readings
         if (status.last_readings && status.last_readings.length > 0) {

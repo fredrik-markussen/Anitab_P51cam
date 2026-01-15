@@ -72,6 +72,14 @@ class CameraService:
         """Check if camera is connected and capturing."""
         return self.running and self.cap is not None and self.cap.isOpened()
 
+    def get_resolution(self):
+        """Get the current video resolution."""
+        with self.lock:
+            if self.frame is not None:
+                height, width = self.frame.shape[:2]
+                return {'width': width, 'height': height}
+        return None
+
     def draw_rois(self, frame, rois):
         """Draw ROI rectangles on a frame."""
         if frame is None:

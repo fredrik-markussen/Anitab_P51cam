@@ -201,14 +201,42 @@ def update_config():
 @app.route('/api/status', methods=['GET'])
 def get_status():
     """Get current system status and readings."""
+    resolution = camera_service.get_resolution() if camera_service else None
     return jsonify({
         'camera_connected': camera_service.is_connected() if camera_service else False,
         'influx_connected': influx_service.is_connected() if influx_service else False,
         'processing_running': processing_running,
         'last_readings': last_readings,
         'last_reading_time': last_reading_time,
-        'interval_minutes': config.get('processing_interval_minutes', 15)
+        'interval_minutes': config.get('processing_interval_minutes', 15),
+        'video_resolution': resolution
     })
+
+
+@app.route('/api/camera/reconnect', methods=['POST'])
+def reconnect_camera():
+    """Force reconnect to camera stream to pick up new settings."""
+    global camera_service
+
+    print("[Camera] Reconnecting to stream...")
+    try:
+        camera_service.stop()
+        time.sleep(0.5)  # Brief pause before reconnecting
+        camera_service.start()
+
+        # Wait a moment for first frame
+        time.sleep(1)
+        resolution = camera_service.get_resolution()
+
+        print(f"[Camera] Reconnected. Resolution: {resolution}")
+        return jsonify({
+            'success': True,
+            'message': 'Camera reconnected',
+            'resolution': resolution
+        })
+    except Exception as e:
+        print(f"[Camera] Reconnect failed: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/start', methods=['POST'])
@@ -266,6 +294,8 @@ def capture_debug():
     frame = camera_service.get_frame()
     if frame is None:
         return jsonify({'error': 'No frame available'}), 500
+
+    print(f"[Capture Debug] Using OCR settings: {ocr_service.ocr_settings}")
 
     readings = ocr_service.extract_all_temperatures_debug(frame, config['rois'])
 
@@ -363,7 +393,11 @@ def get_ocr_settings():
             'clip_limit': 2.0,
             'tile_grid_size': 8,
             'block_size': 11,
-            'c_constant': 2
+            'c_constant': 2,
+            'threshold_mode': 'simple',
+            'threshold_value': 200,
+            'use_clahe': False,
+            'psm_mode': 6
         })
     })
 
@@ -373,6 +407,8 @@ def update_ocr_settings():
     """Update OCR settings."""
     global config, ocr_service
     updates = request.json
+
+    print(f"[OCR Settings] Received update: {updates}")
 
     if 'temperature_range' in updates:
         config['temperature_range'] = updates['temperature_range']
@@ -395,7 +431,9 @@ def update_ocr_settings():
         ocr_settings=config.get('ocr_settings')
     )
 
-    return jsonify({'success': True})
+    print(f"[OCR Settings] Applied to service: {ocr_service.ocr_settings}")
+
+    return jsonify({'success': True, 'applied_settings': ocr_service.ocr_settings})
 
 
 def main():

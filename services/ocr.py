@@ -12,7 +12,11 @@ class OCRService:
         'clip_limit': 2.0,
         'tile_grid_size': 8,
         'block_size': 11,
-        'c_constant': 2
+        'c_constant': 2,
+        'threshold_mode': 'simple',  # 'simple' or 'adaptive'
+        'threshold_value': 200,      # For simple mode (0-255)
+        'use_clahe': False,          # Enable/disable CLAHE preprocessing
+        'psm_mode': 6                # Tesseract PSM mode (6=block, 7=single line)
     }
 
     def __init__(self, temp_min=5, temp_max=37, ocr_settings=None):
@@ -53,31 +57,43 @@ class OCRService:
         # Convert to grayscale
         gray_frame = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
 
-        # Apply CLAHE for contrast enhancement (handles varying lighting)
-        clip_limit = self.ocr_settings.get('clip_limit', 2.0)
-        tile_size = self.ocr_settings.get('tile_grid_size', 8)
-        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
-        enhanced_frame = clahe.apply(gray_frame)
+        # Optionally apply CLAHE for contrast enhancement
+        use_clahe = self.ocr_settings.get('use_clahe', False)
+        if use_clahe:
+            clip_limit = self.ocr_settings.get('clip_limit', 2.0)
+            tile_size = self.ocr_settings.get('tile_grid_size', 8)
+            clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
+            processed_frame = clahe.apply(gray_frame)
+        else:
+            processed_frame = gray_frame
 
-        # Apply adaptive thresholding for better OCR across varying conditions
-        block_size = self.ocr_settings.get('block_size', 11)
-        # Ensure block_size is odd
-        if block_size % 2 == 0:
-            block_size += 1
-        c_constant = self.ocr_settings.get('c_constant', 2)
+        # Apply thresholding based on mode
+        threshold_mode = self.ocr_settings.get('threshold_mode', 'simple')
+        if threshold_mode == 'simple':
+            # Simple binary threshold (like legacy camera_check.py)
+            threshold_value = self.ocr_settings.get('threshold_value', 200)
+            _, thresh_frame = cv2.threshold(
+                processed_frame, threshold_value, 255, cv2.THRESH_BINARY_INV
+            )
+        else:
+            # Adaptive threshold for varying lighting conditions
+            block_size = self.ocr_settings.get('block_size', 11)
+            if block_size % 2 == 0:
+                block_size += 1
+            c_constant = self.ocr_settings.get('c_constant', 2)
+            thresh_frame = cv2.adaptiveThreshold(
+                processed_frame, 255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV,
+                blockSize=block_size,
+                C=c_constant
+            )
 
-        thresh_frame = cv2.adaptiveThreshold(
-            enhanced_frame, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,
-            blockSize=block_size,
-            C=c_constant
-        )
-
-        # Extract text using pytesseract (psm 7 = single line of text)
+        # Extract text using pytesseract with configured PSM mode
+        psm_mode = self.ocr_settings.get('psm_mode', 6)
         raw_text = pytesseract.image_to_string(
             thresh_frame,
-            config='--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789.'
+            config=f'--psm {psm_mode} --oem 3 -c tessedit_char_whitelist=0123456789.'
         ).strip()
 
         return raw_text
@@ -192,33 +208,45 @@ class OCRService:
         roi_frame = frame[y:y+h, x:x+w]
 
         # Get settings
+        use_clahe = self.ocr_settings.get('use_clahe', False)
         clip_limit = self.ocr_settings.get('clip_limit', 2.0)
         tile_size = self.ocr_settings.get('tile_grid_size', 8)
+        threshold_mode = self.ocr_settings.get('threshold_mode', 'simple')
+        threshold_value = self.ocr_settings.get('threshold_value', 200)
         block_size = self.ocr_settings.get('block_size', 11)
         if block_size % 2 == 0:
             block_size += 1
         c_constant = self.ocr_settings.get('c_constant', 2)
+        psm_mode = self.ocr_settings.get('psm_mode', 6)
 
         # Convert to grayscale
         gray_frame = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
 
-        # Apply CLAHE
-        clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
-        enhanced_frame = clahe.apply(gray_frame)
+        # Optionally apply CLAHE
+        if use_clahe:
+            clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
+            enhanced_frame = clahe.apply(gray_frame)
+        else:
+            enhanced_frame = gray_frame
 
-        # Apply adaptive thresholding
-        thresh_frame = cv2.adaptiveThreshold(
-            enhanced_frame, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,
-            blockSize=block_size,
-            C=c_constant
-        )
+        # Apply thresholding based on mode
+        if threshold_mode == 'simple':
+            _, thresh_frame = cv2.threshold(
+                enhanced_frame, threshold_value, 255, cv2.THRESH_BINARY_INV
+            )
+        else:
+            thresh_frame = cv2.adaptiveThreshold(
+                enhanced_frame, 255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV,
+                blockSize=block_size,
+                C=c_constant
+            )
 
         # Extract text
         raw_text = pytesseract.image_to_string(
             thresh_frame,
-            config='--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789.'
+            config=f'--psm {psm_mode} --oem 3 -c tessedit_char_whitelist=0123456789.'
         ).strip()
 
         # Encode debug images to base64

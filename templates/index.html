@@ -30,11 +30,22 @@
                 <div class="video-container">
                     <img id="video-feed" src="/stream" alt="Camera Feed" style="display: none;">
                     <canvas id="roi-canvas"></canvas>
+                    <div id="offline-overlay" class="offline-overlay" style="display: none;">
+                        <div class="offline-message">
+                            <span class="offline-icon">⚠</span>
+                            <span>STREAM OFFLINE</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="roi-controls">
                     <button id="btn-add-roi">Add ROI</button>
                     <button id="btn-save-rois">Save ROIs</button>
                     <button id="btn-reset-rois">Reset</button>
+                    <button id="btn-reconnect-camera" class="btn-secondary">Reconnect Camera</button>
+                    <div class="refresh-control">
+                        <label for="refresh-rate">Preview: <span id="refresh-rate-value">1000</span>ms</label>
+                        <input type="range" id="refresh-rate" min="100" max="5000" step="100" value="1000">
+                    </div>
                 </div>
             </div>
 
@@ -111,7 +122,44 @@
                             </div>
                         </div>
                         <div class="settings-group">
-                            <h4>CLAHE Enhancement</h4>
+                            <h4>Threshold Mode</h4>
+                            <div class="form-group">
+                                <label for="threshold-mode">Mode:</label>
+                                <select id="threshold-mode">
+                                    <option value="simple">Simple (Legacy)</option>
+                                    <option value="adaptive">Adaptive</option>
+                                </select>
+                            </div>
+                            <div id="simple-threshold-settings">
+                                <div class="form-group">
+                                    <label for="threshold-value">Threshold Value:</label>
+                                    <input type="number" id="threshold-value" min="0" max="255" value="200">
+                                    <span class="help-text">(0-255, legacy used 200)</span>
+                                </div>
+                            </div>
+                            <div id="adaptive-threshold-settings" style="display: none;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="block-size">Block Size:</label>
+                                        <input type="number" id="block-size" min="3" max="99" step="2" value="11">
+                                        <span class="help-text">(odd number)</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="c-constant">C Constant:</label>
+                                        <input type="number" id="c-constant" min="-20" max="20" value="2">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>Preprocessing</h4>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="use-clahe">
+                                    Enable CLAHE Enhancement
+                                </label>
+                                <span class="help-text">(contrast enhancement, legacy did not use)</span>
+                            </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="clip-limit">Clip Limit:</label>
@@ -124,22 +172,18 @@
                             </div>
                         </div>
                         <div class="settings-group">
-                            <h4>Adaptive Threshold</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="block-size">Block Size:</label>
-                                    <input type="number" id="block-size" min="3" max="99" step="2" value="11">
-                                    <span class="help-text">(odd number)</span>
-                                </div>
-                                <div class="form-group">
-                                    <label for="c-constant">C Constant:</label>
-                                    <input type="number" id="c-constant" min="-20" max="20" value="2">
-                                </div>
+                            <h4>Tesseract Settings</h4>
+                            <div class="form-group">
+                                <label for="psm-mode">PSM Mode:</label>
+                                <select id="psm-mode">
+                                    <option value="6">6 - Block of text (Legacy)</option>
+                                    <option value="7">7 - Single line</option>
+                                </select>
                             </div>
                         </div>
                         <div class="control-group">
                             <button id="btn-save-ocr" class="btn-primary">Save OCR Settings</button>
-                            <button id="btn-reset-ocr" class="btn-secondary">Reset Defaults</button>
+                            <button id="btn-reset-ocr" class="btn-secondary">Reset to Legacy</button>
                         </div>
                     </div>
                 </div>
