@@ -10,59 +10,59 @@
   "rois": [
     {
       "id": 1,
-      "x": 653,
-      "y": 310,
-      "width": 473,
-      "height": 214
+      "x": 1270,
+      "y": 454,
+      "width": 496,
+      "height": 189
     },
     {
       "id": 2,
-      "x": 648,
-      "y": 640,
-      "width": 476,
-      "height": 204
+      "x": 1265,
+      "y": 824,
+      "width": 497,
+      "height": 184
     },
     {
       "id": 3,
-      "x": 640,
-      "y": 964,
-      "width": 532,
-      "height": 211
+      "x": 1276,
+      "y": 1204,
+      "width": 458,
+      "height": 172
     },
     {
       "id": 4,
-      "x": 637,
-      "y": 1288,
-      "width": 530,
-      "height": 220
+      "x": 1279,
+      "y": 1573,
+      "width": 471,
+      "height": 192
     },
     {
       "id": 5,
-      "x": 1701,
-      "y": 316,
-      "width": 500,
-      "height": 231
+      "x": 2466,
+      "y": 455,
+      "width": 492,
+      "height": 189
     },
     {
       "id": 6,
-      "x": 1682,
-      "y": 654,
-      "width": 511,
+      "x": 2471,
+      "y": 819,
+      "width": 495,
       "height": 191
     },
     {
       "id": 7,
-      "x": 1693,
-      "y": 975,
-      "width": 521,
+      "x": 2482,
+      "y": 1193,
+      "width": 480,
       "height": 203
     },
     {
       "id": 8,
-      "x": 1704,
-      "y": 1305,
-      "width": 486,
-      "height": 221
+      "x": 2480,
+      "y": 1573,
+      "width": 490,
+      "height": 186
     }
   ],
   "influxdb": {
@@ -73,13 +73,17 @@
     "password": "hamsterpi"
   },
   "ocr_settings": {
-    "clip_limit": 0.1,
-    "tile_grid_size": 5,
-    "block_size": 99,
-    "c_constant": 10,
-    "threshold_mode": "adaptive",
-    "threshold_value": 80,
+    "clip_limit": 2,
+    "tile_grid_size": 30,
+    "block_size": 11,
+    "c_constant": 2,
+    "threshold_mode": "otsu",
+    "threshold_value": 200,
     "use_clahe": true,
-    "psm_mode": 6
+    "use_morphology": true,
+    "morph_kernel_size": 3,
+    "scale_factor": 4,
+    "border_padding": 50,
+    "psm_mode": 7
   }
 }

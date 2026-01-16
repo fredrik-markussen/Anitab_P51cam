@@ -657,17 +657,22 @@ class ROIEditor {
             // OCR settings
             const ocr = data.ocr_settings || {};
 
-            // New threshold mode settings
-            document.getElementById('threshold-mode').value = ocr.threshold_mode ?? 'simple';
+            // Threshold mode settings
+            document.getElementById('threshold-mode').value = ocr.threshold_mode ?? 'otsu';
             document.getElementById('threshold-value').value = ocr.threshold_value ?? 200;
-            document.getElementById('use-clahe').checked = ocr.use_clahe ?? false;
-            document.getElementById('psm-mode').value = ocr.psm_mode ?? 6;
+            document.getElementById('use-clahe').checked = ocr.use_clahe ?? true;
+            document.getElementById('psm-mode').value = ocr.psm_mode ?? 7;
 
-            // Adaptive threshold settings (CLAHE)
+            // CLAHE/Adaptive threshold settings
             document.getElementById('clip-limit').value = ocr.clip_limit ?? 2.0;
             document.getElementById('tile-grid').value = ocr.tile_grid_size ?? 8;
             document.getElementById('block-size').value = ocr.block_size ?? 11;
             document.getElementById('c-constant').value = ocr.c_constant ?? 2;
+
+            // Image processing settings
+            document.getElementById('scale-factor').value = ocr.scale_factor ?? 2.0;
+            document.getElementById('border-padding').value = ocr.border_padding ?? 20;
+            document.getElementById('use-morphology').checked = ocr.use_morphology ?? true;
 
             // Update visibility based on threshold mode
             this.updateThresholdModeVisibility();
@@ -682,6 +687,7 @@ class ROIEditor {
         const adaptiveSettings = document.getElementById('adaptive-threshold-settings');
 
         if (simpleSettings) {
+            // Simple mode shows threshold value, Otsu and Adaptive don't need it
             simpleSettings.style.display = mode === 'simple' ? 'block' : 'none';
         }
         if (adaptiveSettings) {
@@ -705,7 +711,11 @@ class ROIEditor {
                 clip_limit: parseFloat(document.getElementById('clip-limit').value),
                 tile_grid_size: parseInt(document.getElementById('tile-grid').value),
                 block_size: parseInt(document.getElementById('block-size').value),
-                c_constant: parseInt(document.getElementById('c-constant').value)
+                c_constant: parseInt(document.getElementById('c-constant').value),
+                // Image processing settings
+                scale_factor: parseFloat(document.getElementById('scale-factor').value),
+                border_padding: parseInt(document.getElementById('border-padding').value),
+                use_morphology: document.getElementById('use-morphology').checked
             }
         };
 
@@ -733,17 +743,20 @@ class ROIEditor {
     }
 
     resetOCRDefaults() {
-        // Legacy-style defaults (matching camera_check.py)
+        // Optimized defaults for 7-segment LCD OCR
         document.getElementById('temp-min').value = 5;
         document.getElementById('temp-max').value = 37;
-        document.getElementById('threshold-mode').value = 'simple';
+        document.getElementById('threshold-mode').value = 'otsu';
         document.getElementById('threshold-value').value = 200;
-        document.getElementById('use-clahe').checked = false;
-        document.getElementById('psm-mode').value = 6;
+        document.getElementById('use-clahe').checked = true;
+        document.getElementById('psm-mode').value = 7;
         document.getElementById('clip-limit').value = 2.0;
         document.getElementById('tile-grid').value = 8;
         document.getElementById('block-size').value = 11;
         document.getElementById('c-constant').value = 2;
+        document.getElementById('scale-factor').value = 2.0;
+        document.getElementById('border-padding').value = 20;
+        document.getElementById('use-morphology').checked = true;
         this.updateThresholdModeVisibility();
     }
 

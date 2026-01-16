@@ -121,39 +121,38 @@ This document specifies the functional parameters, user interface design, and sy
 
 ### 4.2 Main Dashboard Layout
 
-The dashboard uses a **two-column layout** for both the main content area and the control panel to minimize vertical scrolling.
+The dashboard uses a **two-column main layout** (video + control panel) with a **three-column control panel grid** to minimize vertical scrolling.
 
 ```
-┌───────────────────────────────────────────────────────────────────────────────┐
-│  ANITAB P51CAM                    [Camera: ●] [InfluxDB: ●] [Processing: ●]   │
-├───────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ┌─────────────────────────────────────┐  ┌─────────────────────────────────┐│
-│  │                                     │  │ PROCESSING      │ CURRENT       ││
-│  │                                     │  │ CONTROLS        │ READINGS      ││
-│  │      LIVE VIDEO FEED                │  │ [Start] [Stop]  │ S1: 36.5°C ●  ││
-│  │      (with ROI overlay)             │  │ [Capture] [Debug]│ S2: 36.8°C ●  ││
-│  │                                     │  │ Interval: [15]  │ S3: ---.-- ○  ││
-│  │   [ROI boxes drawn on feed]         │  ├─────────────────┼───────────────┤│
-│  │                                     │  │ INFLUXDB        │ OCR SETTINGS  ││
-│  │                                     │  │ SETTINGS [+]    │ [+]           ││
-│  │                                     │  ├─────────────────┼───────────────┤│
-│  └─────────────────────────────────────┘  │ ROI LIST        │ DEBUG OUTPUT  ││
-│                                           │                 │ [+]           ││
-│  [Add ROI] [Save ROIs] [Reset] [Reconnect]│                 │               ││
-│                                           └─────────────────┴───────────────┘│
-└───────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│  ANITAB P51CAM                        [Camera: ●] [InfluxDB: ●] [Processing: ●]         │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  ┌───────────────────────────┐  ┌─────────────────────────────────────────────────────┐│
+│  │                           │  │ PROCESSING     │ CURRENT        │ ROI LIST         ││
+│  │                           │  │ CONTROLS       │ READINGS       │                  ││
+│  │     LIVE VIDEO FEED       │  │ [Start] [Stop] │ S1: 36.5°C ●   │ □ Sensor 1       ││
+│  │     (with ROI overlay)    │  │ [Capture]      │ S2: 36.8°C ●   │ □ Sensor 2       ││
+│  │                           │  │ Interval:[15]  │ S3: ---.-- ○   │ □ Sensor 3       ││
+│  │   [ROI boxes on feed]     │  ├────────────────┼────────────────┼──────────────────┤│
+│  │                           │  │ INFLUXDB [+]   │ OCR SETTINGS   │ DEBUG OUTPUT [+] ││
+│  │                           │  │                │ [+]            │                  ││
+│  └───────────────────────────┘  └────────────────┴────────────────┴──────────────────┘│
+│                                                                                         │
+│  [Add ROI] [Save ROIs] [Reset] [Reconnect Camera]                                       │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### 4.2.1 Control Panel Grid Layout
 
-The control panel uses a 2x3 grid arrangement:
+The control panel uses a **3-column x 2-row grid** arrangement:
 
-| Row | Left Column | Right Column |
-|-----|-------------|--------------|
-| 1 | Processing Controls | Current Readings |
-| 2 | InfluxDB Settings | OCR Settings |
-| 3 | ROI List | Debug Output |
+| Row | Column 1 | Column 2 | Column 3 |
+|-----|----------|----------|----------|
+| 1 | Processing Controls | Current Readings | ROI List |
+| 2 | InfluxDB Settings [+] | OCR Settings [+] | Debug Output [+] |
+
+*[+] indicates collapsible sections*
 
 ### 4.3 UI Components
 
@@ -691,7 +690,7 @@ Anitab_P51cam/
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-01-15 | Anitab Research Team | Initial specification |
-| 1.1 | 2026-01-15 | Anitab Research Team | Updated to two-column control panel layout |
+| 1.1 | 2026-01-15 | Anitab Research Team | Updated to three-column control panel layout |
 
 ---
 

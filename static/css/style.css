@@ -196,16 +196,20 @@ header h1 {
     margin-right: 10px;
 }
 
-/* Control Panel - Two column layout to minimize scrolling */
+/* Control Panel - Three column layout to minimize scrolling */
 .control-panel {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 15px;
     align-content: start;
 }
 
 .control-panel .panel-section.full-width {
     grid-column: 1 / -1;
+}
+
+.control-panel .panel-section.span-two {
+    grid-column: span 2;
 }
 
 .panel-section {
@@ -758,9 +762,15 @@ button {
 }
 
 /* Responsive */
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
     .main-content {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1200px) {
+    .control-panel {
+        grid-template-columns: 1fr 1fr;
     }
 }
 

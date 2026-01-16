@@ -13,10 +13,14 @@ class OCRService:
         'tile_grid_size': 8,
         'block_size': 11,
         'c_constant': 2,
-        'threshold_mode': 'simple',  # 'simple' or 'adaptive'
+        'threshold_mode': 'otsu',    # 'simple', 'adaptive', or 'otsu'
         'threshold_value': 200,      # For simple mode (0-255)
-        'use_clahe': False,          # Enable/disable CLAHE preprocessing
-        'psm_mode': 6                # Tesseract PSM mode (6=block, 7=single line)
+        'use_clahe': True,           # Enable/disable CLAHE preprocessing
+        'use_morphology': True,      # Enable morphological closing
+        'morph_kernel_size': 3,      # Kernel size for morphology
+        'scale_factor': 2.0,         # Image upscale factor for OCR
+        'border_padding': 20,        # Whitespace padding around image
+        'psm_mode': 7                # Tesseract PSM mode (7=single line)
     }
 
     def __init__(self, temp_min=5, temp_max=37, ocr_settings=None):
@@ -68,12 +72,19 @@ class OCRService:
             processed_frame = gray_frame
 
         # Apply thresholding based on mode
+        # Using THRESH_BINARY (not inverted) since LCD shows dark text on light background
         threshold_mode = self.ocr_settings.get('threshold_mode', 'simple')
         if threshold_mode == 'simple':
-            # Simple binary threshold (like legacy camera_check.py)
+            # Simple binary threshold
             threshold_value = self.ocr_settings.get('threshold_value', 200)
             _, thresh_frame = cv2.threshold(
-                processed_frame, threshold_value, 255, cv2.THRESH_BINARY_INV
+                processed_frame, threshold_value, 255, cv2.THRESH_BINARY
+            )
+        elif threshold_mode == 'otsu':
+            # Otsu's automatic threshold
+            _, thresh_frame = cv2.threshold(
+                processed_frame, 0, 255,
+                cv2.THRESH_BINARY + cv2.THRESH_OTSU
             )
         else:
             # Adaptive threshold for varying lighting conditions
@@ -84,13 +95,38 @@ class OCRService:
             thresh_frame = cv2.adaptiveThreshold(
                 processed_frame, 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY_INV,
+                cv2.THRESH_BINARY,
                 blockSize=block_size,
                 C=c_constant
             )
 
+        # Apply morphological closing to fill gaps in 7-segment digits
+        if self.ocr_settings.get('use_morphology', True):
+            kernel_size = self.ocr_settings.get('morph_kernel_size', 3)
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+            thresh_frame = cv2.morphologyEx(thresh_frame, cv2.MORPH_CLOSE, kernel)
+
+        # Scale image for better OCR (Tesseract works best with ~30-35px char height)
+        scale_factor = self.ocr_settings.get('scale_factor', 2.0)
+        if scale_factor != 1.0:
+            h, w = thresh_frame.shape[:2]
+            thresh_frame = cv2.resize(
+                thresh_frame,
+                (int(w * scale_factor), int(h * scale_factor)),
+                interpolation=cv2.INTER_CUBIC
+            )
+
+        # Add border padding for Tesseract context
+        # Use white (255) padding to match white background with black text
+        border = self.ocr_settings.get('border_padding', 20)
+        if border > 0:
+            thresh_frame = cv2.copyMakeBorder(
+                thresh_frame, border, border, border, border,
+                cv2.BORDER_CONSTANT, value=255
+            )
+
         # Extract text using pytesseract with configured PSM mode
-        psm_mode = self.ocr_settings.get('psm_mode', 6)
+        psm_mode = self.ocr_settings.get('psm_mode', 7)
         raw_text = pytesseract.image_to_string(
             thresh_frame,
             config=f'--psm {psm_mode} --oem 3 -c tessedit_char_whitelist=0123456789.'
@@ -208,16 +244,20 @@ class OCRService:
         roi_frame = frame[y:y+h, x:x+w]
 
         # Get settings
-        use_clahe = self.ocr_settings.get('use_clahe', False)
+        use_clahe = self.ocr_settings.get('use_clahe', True)
         clip_limit = self.ocr_settings.get('clip_limit', 2.0)
         tile_size = self.ocr_settings.get('tile_grid_size', 8)
-        threshold_mode = self.ocr_settings.get('threshold_mode', 'simple')
+        threshold_mode = self.ocr_settings.get('threshold_mode', 'otsu')
         threshold_value = self.ocr_settings.get('threshold_value', 200)
         block_size = self.ocr_settings.get('block_size', 11)
         if block_size % 2 == 0:
             block_size += 1
         c_constant = self.ocr_settings.get('c_constant', 2)
-        psm_mode = self.ocr_settings.get('psm_mode', 6)
+        psm_mode = self.ocr_settings.get('psm_mode', 7)
+        use_morphology = self.ocr_settings.get('use_morphology', True)
+        morph_kernel_size = self.ocr_settings.get('morph_kernel_size', 3)
+        scale_factor = self.ocr_settings.get('scale_factor', 2.0)
+        border_padding = self.ocr_settings.get('border_padding', 20)
 
         # Convert to grayscale
         gray_frame = cv2.cvtColor(roi_frame, cv2.COLOR_BGR2GRAY)
@@ -230,17 +270,47 @@ class OCRService:
             enhanced_frame = gray_frame
 
         # Apply thresholding based on mode
+        # Using THRESH_BINARY (not inverted) since LCD shows dark text on light background
         if threshold_mode == 'simple':
             _, thresh_frame = cv2.threshold(
-                enhanced_frame, threshold_value, 255, cv2.THRESH_BINARY_INV
+                enhanced_frame, threshold_value, 255, cv2.THRESH_BINARY
+            )
+        elif threshold_mode == 'otsu':
+            _, thresh_frame = cv2.threshold(
+                enhanced_frame, 0, 255,
+                cv2.THRESH_BINARY + cv2.THRESH_OTSU
             )
         else:
             thresh_frame = cv2.adaptiveThreshold(
                 enhanced_frame, 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY_INV,
+                cv2.THRESH_BINARY,
                 blockSize=block_size,
                 C=c_constant
+            )
+
+        # Store threshold image before further processing for debug
+        thresh_for_debug = thresh_frame.copy()
+
+        # Apply morphological closing
+        if use_morphology:
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (morph_kernel_size, morph_kernel_size))
+            thresh_frame = cv2.morphologyEx(thresh_frame, cv2.MORPH_CLOSE, kernel)
+
+        # Scale image
+        if scale_factor != 1.0:
+            h, w = thresh_frame.shape[:2]
+            thresh_frame = cv2.resize(
+                thresh_frame,
+                (int(w * scale_factor), int(h * scale_factor)),
+                interpolation=cv2.INTER_CUBIC
+            )
+
+        # Add border padding (white to match background)
+        if border_padding > 0:
+            thresh_frame = cv2.copyMakeBorder(
+                thresh_frame, border_padding, border_padding, border_padding, border_padding,
+                cv2.BORDER_CONSTANT, value=255
             )
 
         # Extract text
@@ -249,12 +319,12 @@ class OCRService:
             config=f'--psm {psm_mode} --oem 3 -c tessedit_char_whitelist=0123456789.'
         ).strip()
 
-        # Encode debug images to base64
+        # Encode debug images to base64 (show final processed image)
         debug_images = {
             'original': self._encode_image(roi_frame),
             'grayscale': self._encode_image(gray_frame),
             'enhanced': self._encode_image(enhanced_frame),
-            'threshold': self._encode_image(thresh_frame)
+            'threshold': self._encode_image(thresh_frame)  # Shows final processed image
         }
 
         # Format and validate temperature

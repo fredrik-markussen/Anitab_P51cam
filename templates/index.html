@@ -50,7 +50,7 @@
             </div>
 
             <div class="control-panel">
-                <!-- Row 1: Processing Controls | Current Readings -->
+                <!-- Row 1: Processing Controls | Current Readings | ROI List -->
                 <div class="panel-section">
                     <h3>Processing Controls</h3>
                     <div class="control-group">
@@ -58,11 +58,11 @@
                         <button id="btn-stop" class="btn-danger">Stop <span class="keyboard-hint">X</span></button>
                     </div>
                     <div class="control-group">
-                        <button id="btn-capture" class="btn-secondary">Capture Now <span class="keyboard-hint">C</span></button>
-                        <button id="btn-capture-debug" class="btn-secondary">Debug Capture</button>
+                        <button id="btn-capture" class="btn-secondary">Capture <span class="keyboard-hint">C</span></button>
+                        <button id="btn-capture-debug" class="btn-secondary">Debug</button>
                     </div>
                     <div class="form-group" style="margin-top: 10px;">
-                        <label for="interval">Interval (min):</label>
+                        <label for="interval">Interval:</label>
                         <input type="number" id="interval" min="1" max="60" value="15">
                         <button id="btn-save-interval">Save</button>
                     </div>
@@ -80,9 +80,14 @@
                     <p id="last-reading-time" class="timestamp"></p>
                 </div>
 
-                <!-- Row 2: InfluxDB Settings | OCR Settings -->
+                <div class="panel-section">
+                    <h3>ROI List</h3>
+                    <div id="roi-list"></div>
+                </div>
+
+                <!-- Row 2: InfluxDB Settings | OCR Settings | Debug Output -->
                 <div class="panel-section collapsible">
-                    <h3 class="collapsible-header" data-target="influxdb-settings">InfluxDB Settings <span class="toggle-icon">+</span></h3>
+                    <h3 class="collapsible-header" data-target="influxdb-settings">InfluxDB <span class="toggle-icon">+</span></h3>
                     <div id="influxdb-settings" class="collapsible-content">
                         <div class="form-group">
                             <label for="influx-host">Host/IP:</label>
@@ -109,8 +114,8 @@
                             <input type="password" id="influx-password" placeholder="(leave blank to keep)">
                         </div>
                         <div class="control-group">
-                            <button id="btn-test-influx" class="btn-secondary">Test Connection</button>
-                            <button id="btn-save-influx" class="btn-primary">Save Settings</button>
+                            <button id="btn-test-influx" class="btn-secondary">Test</button>
+                            <button id="btn-save-influx" class="btn-primary">Save</button>
                         </div>
                     </div>
                 </div>
@@ -122,59 +127,59 @@
                             <h4>Temperature Range</h4>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="temp-min">Min (C):</label>
+                                    <label for="temp-min">Min:</label>
                                     <input type="number" id="temp-min" min="-50" max="100" step="0.1" value="5">
                                 </div>
                                 <div class="form-group">
-                                    <label for="temp-max">Max (C):</label>
+                                    <label for="temp-max">Max:</label>
                                     <input type="number" id="temp-max" min="-50" max="100" step="0.1" value="37">
                                 </div>
                             </div>
                         </div>
                         <div class="settings-group">
-                            <h4>Threshold Mode</h4>
+                            <h4>Threshold</h4>
                             <div class="form-group">
                                 <label for="threshold-mode">Mode:</label>
                                 <select id="threshold-mode">
-                                    <option value="simple">Simple (Legacy)</option>
+                                    <option value="simple">Simple</option>
+                                    <option value="otsu">Otsu (auto)</option>
                                     <option value="adaptive">Adaptive</option>
                                 </select>
                             </div>
                             <div id="simple-threshold-settings">
                                 <div class="form-group">
-                                    <label for="threshold-value">Threshold Value:</label>
+                                    <label for="threshold-value">Value:</label>
                                     <input type="number" id="threshold-value" min="0" max="255" value="200">
-                                    <span class="help-text">(0-255)</span>
                                 </div>
                             </div>
                             <div id="adaptive-threshold-settings" style="display: none;">
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="block-size">Block Size:</label>
+                                        <label for="block-size">Block:</label>
                                         <input type="number" id="block-size" min="3" max="99" step="2" value="11">
                                     </div>
                                     <div class="form-group">
-                                        <label for="c-constant">C Constant:</label>
+                                        <label for="c-constant">C:</label>
                                         <input type="number" id="c-constant" min="-20" max="20" value="2">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="settings-group">
-                            <h4>Preprocessing</h4>
+                            <h4>CLAHE</h4>
                             <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="use-clahe">
-                                    Enable CLAHE
+                                    Enable
                                 </label>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="clip-limit">Clip Limit:</label>
+                                    <label for="clip-limit">Clip:</label>
                                     <input type="number" id="clip-limit" min="0.1" max="10" step="0.1" value="2.0">
                                 </div>
                                 <div class="form-group">
-                                    <label for="tile-grid">Tile Grid:</label>
+                                    <label for="tile-grid">Grid:</label>
                                     <input type="number" id="tile-grid" min="1" max="32" value="8">
                                 </div>
                             </div>
@@ -182,31 +187,46 @@
                         <div class="settings-group">
                             <h4>Tesseract</h4>
                             <div class="form-group">
-                                <label for="psm-mode">PSM Mode:</label>
+                                <label for="psm-mode">PSM:</label>
                                 <select id="psm-mode">
                                     <option value="6">6 - Block</option>
-                                    <option value="7">7 - Single line</option>
+                                    <option value="7">7 - Line</option>
+                                    <option value="8">8 - Word</option>
+                                    <option value="13">13 - Raw</option>
                                 </select>
                             </div>
                         </div>
+                        <div class="settings-group">
+                            <h4>Image Processing</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="scale-factor">Scale:</label>
+                                    <input type="number" id="scale-factor" min="1" max="10" step="0.5" value="2.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="border-padding">Padding:</label>
+                                    <input type="number" id="border-padding" min="0" max="200" value="20">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="use-morphology" checked>
+                                    Morphology (fill gaps)
+                                </label>
+                            </div>
+                        </div>
                         <div class="control-group">
-                            <button id="btn-save-ocr" class="btn-primary">Save OCR</button>
+                            <button id="btn-save-ocr" class="btn-primary">Save</button>
                             <button id="btn-reset-ocr" class="btn-secondary">Reset</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 3: ROI List | Debug Output -->
-                <div class="panel-section">
-                    <h3>ROI List</h3>
-                    <div id="roi-list"></div>
-                </div>
-
                 <div class="panel-section collapsible">
-                    <h3 class="collapsible-header" data-target="debug-section">OCR Debug Output <span class="toggle-icon">+</span></h3>
+                    <h3 class="collapsible-header" data-target="debug-section">Debug Output <span class="toggle-icon">+</span></h3>
                     <div id="debug-section" class="collapsible-content">
                         <div id="debug-container" class="debug-container">
-                            <p class="no-data">Click "Debug Capture" to see OCR processing stages</p>
+                            <p class="no-data">Click "Debug" to see OCR stages</p>
                         </div>
                     </div>
                 </div>
